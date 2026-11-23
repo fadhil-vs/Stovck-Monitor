@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Stock Entry — Stock Monitor{% endblock %}
+
+{% block content %}
+<div class="bg-white border border-zinc-200/90 rounded-xl p-4 shadow-xs">
+  
+  <div class="flex items-center justify-between border-b border-zinc-100 pb-3 mb-4">
+    <div>
+      <h2 class="text-sm font-semibold text-zinc-950">Edit Stock Inbound</h2>
+      <p class="text-[11px] text-zinc-400">Modify stock quantity or product details</p>
+    </div>
+    <a href="{{ url_for('stock_page') }}" class="text-xs text-zinc-500 hover:text-zinc-800 transition">Cancel</a>
+  </div>
+
+  <form method="post" action="{{ url_for('edit_stock_order', order_id=order.id) }}" class="space-y-3.5">
+    
+    <div class="grid grid-cols-2 gap-3">
+      <div>
+        <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1">Date</label>
+        <input type="date" name="order_date" value="{{ order.order_date }}" required
+               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900">
+      </div>
+      <div>
+        <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1">Quantity</label>
+        <input type="number" name="qty_added" value="{{ order.qty_added }}" min="0" required
+               class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs font-mono font-medium focus:outline-none focus:ring-1 focus:ring-zinc-900">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1">Product</label>
+      <input type="text" name="product_name" value="{{ order.product_name }}" required
+             class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900">
+      <p class="text-[10px] text-zinc-400 mt-1">Stock quantity will automatically adjust based on the difference.</p>
+    </div>
+
+    <div>
+      <label class="block text-[11px] font-medium text-zinc-500 uppercase tracking-wider mb-1">Note (Optional)</label>
+      <input type="text" name="note" value="{{ order.note or '' }}" placeholder="Supplier / delivery note"
+             class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-zinc-900">
+    </div>
+
+    <div class="flex items-center space-x-2 pt-2">
+      <button type="submit" 
+              class="flex-1 bg-zinc-900 hover:bg-zinc-800 text-white font-medium py-2 rounded-lg text-xs shadow-xs transition">
+        Save Changes
+      </button>
+      <a href="{{ url_for('stock_page') }}"
+         class="px-4 py-2 border border-zinc-200 text-zinc-600 hover:text-zinc-900 rounded-lg text-xs font-medium transition text-center">
+        Cancel
+      </a>
+    </div>
+
+  </form>
+</div>
+{% endblock %}

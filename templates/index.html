@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Sales Ledger — Stock Monitor{% endblock %}
+
+{% block content %}
+
+<!-- Clean Segmented Tabs -->
+<div class="bg-zinc-200/80 p-1 rounded-xl flex items-center text-xs font-medium text-zinc-600 mb-3">
+  <a href="{{ url_for('index', tab='unpaid') }}" 
+     class="flex-1 py-1.5 text-center rounded-lg transition flex items-center justify-center space-x-1
+     {% if active_tab == 'unpaid' %}bg-white text-zinc-950 font-semibold shadow-xs{% else %}hover:text-zinc-900{% endif %}">
+    <span>Unpaid</span>
+    {% if unpaid_count > 0 %}
+      <span class="text-[10px] px-1.5 py-0.2 rounded-full font-mono {% if active_tab == 'unpaid' %}bg-rose-100 text-rose-700 font-bold{% else %}bg-zinc-300 text-zinc-700{% endif %}">
+        {{ unpaid_count }}
+      </span>
+    {% endif %}
+  </a>
+
+  <a href="{{ url_for('index', tab='paid') }}" 
+     class="flex-1 py-1.5 text-center rounded-lg transition flex items-center justify-center space-x-1
+     {% if active_tab == 'paid' %}bg-white text-zinc-950 font-semibold shadow-xs{% else %}hover:text-zinc-900{% endif %}">
+    <span>Paid</span>
+    {% if paid_count > 0 %}
+      <span class="text-[10px] px-1.5 py-0.2 rounded-full font-mono {% if active_tab == 'paid' %}bg-emerald-100 text-emerald-800 font-bold{% else %}bg-zinc-300 text-zinc-700{% endif %}">
+        {{ paid_count }}
+      </span>
+    {% endif %}
+  </a>
+
+  <a href="{{ url_for('index', tab='other') }}" 
+     class="flex-1 py-1.5 text-center rounded-lg transition flex items-center justify-center space-x-1
+     {% if active_tab == 'other' %}bg-white text-zinc-950 font-semibold shadow-xs{% else %}hover:text-zinc-900{% endif %}">
+    <span>Not Dealing</span>
+    {% if other_count > 0 %}
+      <span class="text-[10px] px-1.5 py-0.2 rounded-full font-mono {% if active_tab == 'other' %}bg-zinc-800 text-white font-bold{% else %}bg-zinc-300 text-zinc-700{% endif %}">
+        {{ other_count }}
+      </span>
+    {% endif %}
+  </a>
+
+  <a href="{{ url_for('index', tab='all') }}" 
+     class="flex-1 py-1.5 text-center rounded-lg transition
+     {% if active_tab == 'all' %}bg-white text-zinc-950 font-semibold shadow-xs{% else %}hover:text-zinc-900{% endif %}">
+    <span>All</span>
+  </a>
+</div>
+
+<!-- Refined Metric Banner -->
+<div class="bg-white border border-zinc-200/90 rounded-xl p-3.5 mb-3 flex items-center justify-between shadow-xs">
+  <div>
+    <span class="text-[11px] font-medium text-zinc-400 uppercase tracking-wider block">
+      {% if active_tab == 'unpaid' %}Outstanding Unpaid
+      {% elif active_tab == 'paid' %}Total Collected
+      {% elif active_tab == 'other' %}Not Dealing / Third Party
+      {% else %}Total Sales Volume{% endif %}
+    </span>
+    <span class="text-xl font-semibold tracking-tight text-zinc-950 mt-0.5 block font-mono">
+      {% if active_tab == 'unpaid' %}{{ total_unpaid_amount | currency }}
+      {% elif active_tab == 'paid' %}{{ total_paid_amount | currency }}
+      {% elif active_tab == 'other' %}{{ total_other_amount | currency }}
+      {% else %}{{ (total_unpaid_amount + total_paid_amount + total_other_amount) | currency }}{% endif %}
+    </span>
+  </div>
+  
+  <div class="flex items-center space-x-1.5">
+    <a href="{{ url_for('export_sales', status=active_tab, format='xlsx') }}" 
+       class="inline-flex items-center space-x-1 px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition">
+      <svg class="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+      </svg>
+      <span>Excel</span>
+    </a>
+    <a href="{{ url_for('export_sales', status=active_tab, format='csv') }}" 
+       class="inline-flex items-center space-x-1 px-2.5 py-1.5 border border-zinc-200 rounded-lg text-xs font-medium text-zinc-700 hover:bg-zinc-50 transition">
+      <span>CSV</span>
+    </a>
+  </div>
+</div>
+
+<!-- Search Input -->
+<div class="mb-3">
+  <form method="get" action="{{ url_for('index') }}" class="relative">
+    <input type="hidden" name="tab" value="{{ active_tab }}">
+    <input type="text" name="q" value="{{ search }}" placeholder="Filter by customer, bill no, product..." 
+           class="w-full bg-white border border-zinc-200 rounded-lg px-3 py-2 text-xs pl-8 focus:outline-none focus:ring-1 focus:ring-zinc-900 focus:border-zinc-900 shadow-2xs transition placeholder:text-zinc-400">
+    <svg class="w-3.5 h-3.5 text-zinc-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+    </svg>
+    {% if search %}
+      <a href="{{ url_for('index', tab=active_tab) }}" class="absolute right-2.5 top-2 text-zinc-400 hover:text-zinc-600 text-xs font-bold">&times;</a>
+    {% endif %}
+  </form>
+</div>
+
+<!-- Sales List -->
+<div class="space-y-2.5">
+  {% if sales %}
+    {% for s in sales %}
+    <div class="bg-white border border-zinc-200/90 rounded-xl p-3.5 shadow-2xs transition">
+      
+      <!-- Top Row: Customer + Status Tag + Amount -->
+      <div class="flex items-start justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <div class="flex items-center space-x-2">
+            <h3 class="font-semibold text-zinc-950 text-sm truncate leading-snug">{{ s.customer_name }}</h3>
+            <span class="inline-flex items-center text-[10px] font-medium px-2 py-0.5 rounded-full border
+              {% if s.status == 'unpaid' %}bg-rose-50 text-rose-700 border-rose-200/60
+              {% elif s.status == 'paid' %}bg-emerald-50 text-emerald-700 border-emerald-200/60
+              {% else %}bg-zinc-100 text-zinc-700 border-zinc-200{% endif %}">
+              {{ valid_statuses.get(s.status, s.status) }}
+            </span>
+          </div>
+          <p class="text-[11px] text-zinc-400 font-mono mt-0.5">
+            #{{ s.sl_no }} &bull; {{ s.bill_no }}
+          </p>
+        </div>
+        
+        <div class="text-right shrink-0">
+          <span class="text-base font-bold font-mono tracking-tight text-zinc-900">
+            {{ s.amount | currency }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Item Row -->
+      <div class="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between text-xs text-zinc-600">
+        <div class="flex items-center space-x-1.5 truncate">
+          <span class="text-zinc-400">Item:</span>
+          <span class="font-medium text-zinc-800 truncate">{{ s.product_name }}</span>
+        </div>
+        <span class="text-zinc-500 font-mono text-[11px] shrink-0 bg-zinc-50 border border-zinc-200 px-1.5 py-0.5 rounded">
+          Qty: {{ s.qty }}
+        </span>
+      </div>
+
+      <!-- Footer: Purchase Date, Days Since Purchase, 1-Click Status Switches -->
+      <div class="mt-2.5 pt-2 border-t border-zinc-100 flex items-center justify-between flex-wrap gap-2 text-xs">
+        
+        <!-- Date & Elapsed Time -->
+        <div class="flex items-center space-x-1.5 text-zinc-500 text-[11px]">
+          <span>{{ s.sale_date }}</span>
+          <span>&bull;</span>
+          <span class="font-medium 
+            {% if s.status == 'unpaid' and s.days_diff >= 7 %}text-rose-600 font-semibold
+            {% elif s.status == 'unpaid' and s.days_diff >= 3 %}text-amber-600
+            {% else %}text-zinc-600{% endif %}">
+            {{ s.days_label }}
+          </span>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center space-x-1.5 ml-auto">
+          {% if s.status != 'paid' %}
+            <form method="post" action="{{ url_for('set_status', sale_id=s.id, new_status='paid') }}" class="inline">
+              <button type="submit" 
+                      class="px-2 py-1 text-[11px] font-medium bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-md transition">
+                Mark Paid
+              </button>
+            </form>
+          {% endif %}
+
+          {% if s.status != 'unpaid' %}
+            <form method="post" action="{{ url_for('set_status', sale_id=s.id, new_status='unpaid') }}" class="inline">
+              <button type="submit" 
+                      class="px-2 py-1 text-[11px] font-medium bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-md transition">
+                Mark Unpaid
+              </button>
+            </form>
+          {% endif %}
+
+          {% if s.status != 'other' %}
+            <form method="post" action="{{ url_for('set_status', sale_id=s.id, new_status='other') }}" class="inline">
+              <button type="submit" 
+                      class="px-2 py-1 text-[11px] font-medium bg-zinc-100 hover:bg-zinc-200 text-zinc-700 border border-zinc-200 rounded-md transition">
+                Not Dealing
+              </button>
+            </form>
+          {% endif %}
+
+          <!-- Delete -->
+          <form method="post" action="{{ url_for('delete_sale', sale_id=s.id) }}" 
+                onsubmit="return confirm('Delete this record?')" class="inline">
+            <button type="submit" class="p-1 text-zinc-400 hover:text-rose-600 rounded transition" title="Delete record">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="bg-white border border-zinc-200 rounded-xl p-8 text-center mt-3">
+      <div class="w-8 h-8 rounded-full bg-zinc-100 text-zinc-400 flex items-center justify-center mx-auto mb-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
+        </svg>
+      </div>
+      <p class="text-xs font-semibold text-zinc-800">No records found</p>
+      <p class="text-[11px] text-zinc-400 mt-0.5">There are no bills under this view.</p>
+      <a href="{{ url_for('add_sale') }}" class="inline-flex items-center space-x-1 mt-3 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 text-white text-xs font-medium rounded-lg transition">
+        <span>Create New Sale</span>
+      </a>
+    </div>
+  {% endif %}
+</div>
+
+{% endblock %}
