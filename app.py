@@ -67,6 +67,7 @@ def parse_date(date_val):
 # ==============================================================================
 
 @app.route("/")
+@app.route("/api/index")
 def index():
     tab = request.args.get("tab", "unpaid")  # unpaid | paid | other | all
     search = request.args.get("q", "").strip()
